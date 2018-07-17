@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Arieslm/testwork/issues"
   },
-  "homepage": "https://github.com/Arieslm/testwork#readme"
+  "homepage": "https://github.com/Arieslm/testwork#readme",
+  "dependencies": {
+    "moment-timezone": "^0.5.21"
+  }
 }
