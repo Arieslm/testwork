@@ -1,5 +1,3 @@
-import echarts from 'echarts';
-import router from '../../router';
 import moment from 'moment-timezone';
 moment.tz.setDefault('Asia/Shanghai');
 
@@ -223,35 +221,6 @@ const checkFloat = function(c){
     return r.test(c);
 }
 
-const getStoreIdName = function () {
-    // if (router.history.current.query.store_id && router.history.current.query.store_name) {
-    //     return encodeURI('store_id=' + router.history.current.query.store_id + '&store_name=' +
-    //         router.history.current.query.store_name);
-    // } else {
-    //     return '';
-    // }
-    let opt = {},
-        storeId = router.history.current.query.store_id,
-        storeName = router.history.current.query.store_name,
-        storeFlag = router.history.current.query.store_flag;
-    if ( storeId && storeName) {
-        opt.store_id = storeId;
-        opt.store_name = storeName;
-    }
-    if (storeFlag) {
-        opt.store_flag = storeFlag
-    }
-    let strUrl = '',
-        keys = Object.keys(opt);
-    if (keys.length) {
-        let arr = keys.map((item)=>{
-            return `${item}=${opt[item]}`;
-        });
-        strUrl = arr.join('&');
-    }
-    return strUrl;
-}
-
 const windowBridge = function (callback) {
     if (window.bridge && window.bridge.callHandler) {
             callback()
@@ -259,44 +228,6 @@ const windowBridge = function (callback) {
         setupWebViewJavascriptBridge(callback)
     }
 }
-
-const goStoreType = function (to,flag) {
-    let fullQuery = to.fullPath.split('?')[1]
-    let pathBoolean = false;
-    let BigurlBoolean = false;
-    let routerUrl = router.options.routes;
-    let StoreType;
-
-    if (flag==0) {
-        StoreType="";
-    } else if(flag==1){
-        StoreType="big_";
-    }else if(flag==3){
-        StoreType="multi_";
-    }else{
-        StoreType="";
-    };
-
-    let flagUrl = `/${StoreType}${to.path.split('/')[1]}`;
-    let result = {
-        url: flagUrl,
-        isGo: false,
-        fullQuery:fullQuery
-    }
-    routerUrl.forEach((item) => {
-        if (item.path == to.path) {
-            pathBoolean = true;
-        }
-        if (item.path == flagUrl) {
-            BigurlBoolean = true;
-        }
-    })
-    if (pathBoolean && BigurlBoolean) {
-        result.isGo = true;
-    }
-    return result;
-}
-
 
 
 const formatterRate=function(str){
@@ -433,9 +364,7 @@ export default {
     setupWebViewJavascriptBridge : setupWebViewJavascriptBridge,
     checkFloat:checkFloat,
     moment: moment,
-    getStoreIdName: getStoreIdName,
     windowBridge: windowBridge,
-    goStoreType: goStoreType,
     formatterRate:formatterRate,
     formatterRateWithNum:formatterRateWithNum,
     getByteLen:getByteLen,
