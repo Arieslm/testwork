@@ -211,6 +211,17 @@ const formatDate = function(str, f){
     let dates = str+'';
     return `${dates.substr(0,4)}${f}${dates.substr(4,2)}${f}${dates.substr(6,2)}`;
 }
+// 20180730 -> 07-30 格式
+const changeTime = function(str){ //20180730
+    if(str==null || str==''){
+        return null;
+    }
+    let time = str.substr(4);
+    let time1 = time.substr(0,2);
+    let time2 = time.substr(2,2);
+    return time1+'-'+time2
+
+}
 export default {
     negativeFillter: negativeFillter,
     formatUnixTime: formatUnixTime,
@@ -233,4 +244,5 @@ export default {
     formatterQty: formatterQty,
     percentageNumberTwo: percentageNumberTwo,
     formatDate: formatDate,
+    changeTime: changeTime
 }

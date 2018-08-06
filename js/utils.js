@@ -8,6 +8,7 @@ const getCookie = function(name) { //获取cookia
     else
         return null;
 }
+const qcloudHost = 'https://dasuan-app-1255389510.cos.ap-beijing.myqcloud.com';
 
 const setTitle = function(title) {
     setTimeout(function() {
@@ -221,6 +222,35 @@ const checkFloat = function(c){
     return r.test(c);
 }
 
+const getStoreIdName = function (router) {
+    // if (router.history.current.query.store_id && router.history.current.query.store_name) {
+    //     return encodeURI('store_id=' + router.history.current.query.store_id + '&store_name=' +
+    //         router.history.current.query.store_name);
+    // } else {
+    //     return '';
+    // }
+    let opt = {},
+        storeId = router.history.current.query.store_id,
+        storeName = router.history.current.query.store_name,
+        storeFlag = router.history.current.query.store_flag;
+    if ( storeId && storeName) {
+        opt.store_id = storeId;
+        opt.store_name = encodeURIComponent(storeName);
+    }
+    if (storeFlag) {
+        opt.store_flag = storeFlag
+    }
+    let strUrl = '',
+        keys = Object.keys(opt);
+    if (keys.length) {
+        let arr = keys.map((item)=>{
+            return `${item}=${opt[item]}`;
+        });
+        strUrl = arr.join('&');
+    }
+    return strUrl;
+}
+
 const windowBridge = function (callback) {
     if (window.bridge && window.bridge.callHandler) {
             callback()
@@ -228,6 +258,44 @@ const windowBridge = function (callback) {
         setupWebViewJavascriptBridge(callback)
     }
 }
+
+const goStoreType = function (to,flag,router) {
+    let fullQuery = to.fullPath.split('?')[1]
+    let pathBoolean = false;
+    let BigurlBoolean = false;
+    let routerUrl = router.options.routes;
+    let StoreType;
+
+    if (flag==0) {
+        StoreType="";
+    } else if(flag==1){
+        StoreType="big_";
+    }else if(flag==3){
+        StoreType="multi_";
+    }else{
+        StoreType="";
+    };
+
+    let flagUrl = `/${StoreType}${to.path.split('/')[1]}`;
+    let result = {
+        url: flagUrl,
+        isGo: false,
+        fullQuery:fullQuery
+    }
+    routerUrl.forEach((item) => {
+        if (item.path == to.path) {
+            pathBoolean = true;
+        }
+        if (item.path == flagUrl) {
+            BigurlBoolean = true;
+        }
+    })
+    if (pathBoolean && BigurlBoolean) {
+        result.isGo = true;
+    }
+    return result;
+}
+
 
 
 const formatterRate=function(str){
@@ -347,6 +415,133 @@ const addUrlQuery = (url, ...args) => {
     return result;
 }
 
+class StoreSelected {
+    constructor(selected) {
+        this.selected = selected
+    }
+
+    formatResult(data) {
+        let result = []
+        for(let i = 0 ; i < data.length ; i ++) {
+
+            let type = 0 // 不选中，可点击
+
+            for(let key of Object.keys(this.selected) ) {
+                let node = this.selected[key]
+
+                if(this.isChild(data[i],node)) {
+                    type = 1 //子节点，默认选中，置灰
+                    break
+                } else if (key == data[i].department_id) {
+                    type = 2 // 自身，默认选中，可点击
+                    break
+                }
+            }
+
+            result.push({
+                department_id : data[i].department_id,
+                hierarchy_index : data[i].hierarchy_index,
+                department_name: data[i].department_name,
+                department_type: data[i].department_type,
+                has_more:data[i].has_more,
+                parent_id: data[i].parent_id,
+                choose_state: data[i].choose_state,
+                staff_numbers: data[i].staff_numbers,
+                type : type
+            })
+        }
+        return result
+    }
+
+    /*判断node1是node2的孩子*/
+    isChild(node1,node2) {
+
+        if(node1.hierarchy_index.length <= node2.hierarchy_index.length){
+            return false
+        }
+        let tmp = node1.hierarchy_index.slice(0,node2.hierarchy_index.length)
+
+        if(tmp == node2.hierarchy_index) {
+            return true
+        }
+        return false
+    }
+
+    getSelected() {
+        return this.selected
+    }
+
+    setSelected(selected) {
+        this.selected = selected
+    }
+
+    addItemToSelect(item) {
+        let deleted = []
+        let add2Selected = true
+
+        for(let key of Object.keys(this.selected) ) {
+
+            let node = this.selected[key]
+
+            if(this.isChild(node,item)) {
+                deleted.push(key)
+            }
+            else if(this.isChild(item,node)) {
+                add2Selected = false
+            } else if (item.department_id == key) {
+                add2Selected = false
+            }
+        }
+
+        if(add2Selected) {
+            this.selected[item.department_id] = item
+        }
+
+        for(let i = 0 ; i < deleted.length ; i ++) {
+
+            delete this.selected[deleted[i]]
+        }
+    }
+
+    removeFromSelect(item) {
+        if(this.selected.hasOwnProperty(item.department_id)) {
+
+            delete this.selected[item.department_id]
+        }
+    }
+}
+
+//部门管理下钻导航
+const NavRoute = function (navArr=[],navObj,ids='id'){
+    if (navArr.length==0) {
+        navArr.push(navObj)
+    } else{
+        for (let i = 0; i < navArr.length; i++) {
+            if (navArr[i][ids]==navObj[ids]) {
+                navArr.splice(i+1)
+            } else{
+                navArr.push(navObj)
+            };
+        };
+    };
+    return navArr;
+}
+
+//部门管理上边导航
+const getNavLocal = function(localStorageName,infoObjQuery={},ids='id'){
+    let routeIndex;
+    let NavLocal = JSON.parse(localStorage.getItem(localStorageName)) || []
+    for (var i = 0; i < NavLocal.length; i++) {
+        if (NavLocal[i][ids]==infoObjQuery[ids]) {
+            routeIndex = i
+        }
+    };
+    return {
+        get:NavLocal.pop(),
+        go: `-${NavLocal.length-routeIndex}`
+    }
+}
+
 export default {
     getCookie: getCookie,
     setTitle: setTitle,
@@ -364,7 +559,9 @@ export default {
     setupWebViewJavascriptBridge : setupWebViewJavascriptBridge,
     checkFloat:checkFloat,
     moment: moment,
+    getStoreIdName: getStoreIdName,
     windowBridge: windowBridge,
+    goStoreType: goStoreType,
     formatterRate:formatterRate,
     formatterRateWithNum:formatterRateWithNum,
     getByteLen:getByteLen,
@@ -377,5 +574,9 @@ export default {
     formatIntWithNum: formatIntWithNum,
     isIos:isIos,
     checkIosVersion:checkIosVersion,
-    addUrlQuery: addUrlQuery
+    addUrlQuery: addUrlQuery,
+    StoreSelected: StoreSelected,
+    NavRoute:NavRoute,
+    getNavLocal:getNavLocal,
+    qcloudHost: qcloudHost
 }
